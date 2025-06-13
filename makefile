@@ -1,26 +1,21 @@
 .PHONY: all venv clean run run_ht run_st run_sim analyze
 
-# Diretórios e arquivos
 VENV_DIR = venv
 DATA_DIR = data
 CSV_FILE = $(DATA_DIR)/dados.csv
 
-# Detecta o sistema operacional
 ifeq ($(OS),Windows_NT)
-    PYTHON = python
-    PYTHON_EXEC = $(VENV_DIR)\\Scripts\\python
-    MKDIR = mkdir
-    RMDIR = rmdir /s /q
-    EXISTS = if exist
-    NULL_OUT = > nul 2>&1
+    SHELL := powershell.exe
+    .SHELLFLAGS := -NoProfile -Command
+    RMDIR_CMD = Remove-Item -LiteralPath '$(subst /,\\,$1)' -Recurse -Force -ErrorAction SilentlyContinue
 else
-    PYTHON = python3
-    PYTHON_EXEC = $(VENV_DIR)/bin/python
-    MKDIR = mkdir -p
-    RMDIR = rm -rf
-    EXISTS = test -d
-    NULL_OUT = > /dev/null 2>&1
+    SHELL := /bin/sh
+    RMDIR_CMD = rm -rf $1 || true
 endif
+
+PYTHON := $(if $(filter Windows_NT,$(OS)),python,python3)
+PYTHON_EXEC := $(if $(filter Windows_NT,$(OS)),$(VENV_DIR)\\Scripts\\python,$(VENV_DIR)/bin/python)
+MKDIR_CMD := $(if $(filter Windows_NT,$(OS)),mkdir,$(if $(shell uname),mkdir -p))
 
 all: venv $(CSV_FILE)
 
@@ -33,7 +28,7 @@ venv:
 
 $(CSV_FILE):
 	@echo "Preparando arquivo CSV..."
-	@$(MKDIR) "$(DATA_DIR)"
+	@mkdir -p "$(DATA_DIR)"
 	@echo "lat,lon,alt,vel" > "$(CSV_FILE)"
 
 run:
@@ -57,6 +52,6 @@ analyze:
 
 clean:
 	@echo "Limpando pastas venv e data..."
-	@-$(EXISTS) "$(VENV_DIR)" && $(RMDIR) "$(VENV_DIR)" $(NULL_OUT) || true
-	@-$(EXISTS) "$(DATA_DIR)" && $(RMDIR) "$(DATA_DIR)" $(NULL_OUT) || true
+	@$(call RMDIR_CMD,$(VENV_DIR))
+	@$(call RMDIR_CMD,$(DATA_DIR))
 	@echo "Pastas removidas."

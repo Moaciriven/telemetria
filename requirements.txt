@@ -2,3 +2,7 @@ PyQt6
 pyqtgraph
 numpy
 pandas
+streamlit 
+psutil
+plotly
+matplotlib
