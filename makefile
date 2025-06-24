@@ -1,4 +1,4 @@
-.PHONY: all venv clean run run_ht run_st run_sim analyze
+.PHONY: all venv clean clean-data run run--teste run_ht run_st run_sim analyze
 
 VENV_DIR = venv
 DATA_DIR = data
@@ -17,8 +17,15 @@ PYTHON := $(if $(filter Windows_NT,$(OS)),python,python3)
 PYTHON_EXEC := $(if $(filter Windows_NT,$(OS)),$(VENV_DIR)\\Scripts\\python,$(VENV_DIR)/bin/python)
 MKDIR_CMD := $(if $(filter Windows_NT,$(OS)),mkdir,$(if $(shell uname),mkdir -p))
 
-all: venv $(CSV_FILE)
+# =====================================
+# Alvo principal (faz clean antes de tudo)
+# =====================================
+all: clean venv $(CSV_FILE)
 
+
+# =====================================
+# Criação do ambiente virtual e CSV
+# =====================================
 venv:
 	@echo "Criando ambiente virtual..."
 	@$(PYTHON) -m venv "$(VENV_DIR)"
@@ -31,20 +38,33 @@ $(CSV_FILE):
 	@mkdir -p "$(DATA_DIR)"
 	@echo "lat,lon,alt,vel" > "$(CSV_FILE)"
 
+# =====================================
+# Execuções
+# =====================================
 run:
 	@echo "Executando lançamento..."
 	$(PYTHON_EXEC) run.py
 
-run--teste:
-	@echo "Executando lançamento..."
+run--teste: clean-data
+	@echo "Executando lançamento (teste)..."
 	$(PYTHON_EXEC) run.py
 
+# =====================================
+# Análise
+# =====================================
 analyze:
 	@echo "Analisando dados..."
 	@$(PYTHON_EXEC) src/analyzer.py
 
+# =====================================
+# Limpeza completa
+# =====================================
 clean:
 	@echo "Limpando pastas venv e data..."
 	@$(call RMDIR_CMD,$(VENV_DIR))
 	@$(call RMDIR_CMD,$(DATA_DIR))
-	@echo "Pastas removidas."
+
+# Limpa apenas o CSV (mantém a pasta `data`)
+clean-data:
+	@echo "Limpando arquivo CSV..."
+	@if [ -f "$(CSV_FILE)" ]; then rm "$(CSV_FILE)"; fi

@@ -17,17 +17,18 @@ class RocketSimulator:
         self.update_interval = 1.0  # Intervalo de envio (s)
         
         # Parâmetros do foguete
-        self.mass = 0.5          # kg
+        self.mass = 0.3          # kg
         self.cross_area = 0.003  # m²
         self.thrust_force = 200   # N
         self.burn_time = 0.3      # s
         
-        # Localização inicial (São Paulo - Ibirapuera)
+        # Localização inicial (Paraná - Campo Mourão) Av. Cap. Índio Bandeira, 501 - Vila Carolo, Campo Mourão - PR, 87301-899
         self.origin = {
-            'lat': -23.587085, 
-            'lon': -46.657273,
-            'alt': 0.0
+            'lat': -24.046746, 
+            'lon': -52.378203,
+            'alt': 0.0  # Altitude pode ser ajustada se necessário
         }
+
         
         # Estado do foguete
         self.state = {

@@ -126,7 +126,7 @@ def main():
     # Ordem de inicialização e dependências
     startup_order = [
         ("UDP_GETTER", []),
-        ("VISUALIZADOR", ["UDP_GETTER"]),
+        #S("VISUALIZADOR", ["UDP_GETTER"]),
         ("DASHBOARD", ["UDP_GETTER"]),
         ("SIMULADOR", ["UDP_GETTER"])
     ]
