@@ -412,95 +412,121 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-## ==============
-# BARRA LATERAL (MODERNA E PROFISSIONAL) - CORRIGIDA
+# ==============
+# BARRA LATERAL CORRIGIDA
 # ==============
 with st.sidebar:
     # Cabeçalho da sidebar
-    st.markdown("""
-    <div class="sidebar-header">
-        <div class="sidebar-logo">🚀</div>
-        <div class="sidebar-title">FOGUETE PET</div>
-        <div class="sidebar-subtitle">Sistema de Controle de Missão</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style="
+            background: linear-gradient(90deg, #15232b, #2c5364);
+            padding: 25px 15px;
+            margin: -20px -15px 20px -15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-bottom: 2px solid #4cc9f0;
+        ">
+            <div style="
+                width: 100px;
+                height: 100px;
+                margin: 0 auto 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.1);
+                border-radius: 50%;
+                border: 3px solid #4cc9f0;
+                font-size: 50px;
+            ">🚀</div>
+            <div style="color: white; font-size: 1.8rem; font-weight: 700; margin: 5px 0; letter-spacing: 1px;">
+                FOGUETE PET
+            </div>
+            <div style="color: #a0d2eb; font-size: 1rem; margin-bottom: 15px;">
+                Sistema de Controle de Missão
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
-    # Status do sistema (CORRIGIDO)
-    st.markdown("""
-    <div class="sidebar-section-title">🔌 Status do Sistema</div>
-    <div class="sidebar-section">
-        <div class="status-item">
-            <div class="status-indicator status-online"></div>
-            <div>Simulador de Voo</div>
-        </div>
+    # Status do sistema
+    st.subheader("🔌 Status do Sistema")
+    status_container = st.container()
+    with status_container:
+        cols = st.columns([0.1, 0.9])
+        with cols[0]:
+            st.markdown('<div style="background: #00c853; width: 12px; height: 12px; border-radius: 50%; margin-top: 8px;"></div>', unsafe_allow_html=True)
+        with cols[1]:
+            st.write("Simulador de Voo")
         
-        <div class="status-item">
-            <div class="status-indicator status-online"></div>
-            <div>Coletor de Dados</div>
-        </div>
+        cols = st.columns([0.1, 0.9])
+        with cols[0]:
+            st.markdown('<div style="background: #00c853; width: 12px; height: 12px; border-radius: 50%; margin-top: 8px;"></div>', unsafe_allow_html=True)
+        with cols[1]:
+            st.write("Coletor de Dados")
         
-        <div class="status-item">
-            <div class="status-indicator status-online"></div>
-            <div>Trajetória com Mapa</div>
-        </div>
+        cols = st.columns([0.1, 0.9])
+        with cols[0]:
+            st.markdown('<div style="background: #00c853; width: 12px; height: 12px; border-radius: 50%; margin-top: 8px;"></div>', unsafe_allow_html=True)
+        with cols[1]:
+            st.write("Trajetória com Mapa")
         
-        <div class="status-item">
-            <div class="status-indicator status-online"></div>
-            <div>Visualizador 3D</div>
-        </div>
+        cols = st.columns([0.1, 0.9])
+        with cols[0]:
+            st.markdown('<div style="background: #00c853; width: 12px; height: 12px; border-radius: 50%; margin-top: 8px;"></div>', unsafe_allow_html=True)
+        with cols[1]:
+            st.write("Visualizador 3D")
         
-        <div class="status-item">
-            <div class="status-indicator status-online"></div>
-            <div>Dashboard</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        cols = st.columns([0.1, 0.9])
+        with cols[0]:
+            st.markdown('<div style="background: #00c853; width: 12px; height: 12px; border-radius: 50%; margin-top: 8px;"></div>', unsafe_allow_html=True)
+        with cols[1]:
+            st.write("Dashboard")
     
-    # Detalhes da missão (CORRIGIDO)
-    st.markdown("""
-    <div class="sidebar-section-title">📋 Detalhes da Missão</div>
-    <div class="sidebar-section">
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 12px;">
-            <span style="color: #a0d2eb;">Nome:</span>
-            <span style="font-weight: 500;">PET-01</span>
-            
-            <span style="color: #a0d2eb;">Data:</span>
-            <span style="font-weight: 500;">01/07/2025</span>
-            
-            <span style="color: #a0d2eb;">Local:</span>
-            <span style="font-weight: 500;">UTFPR - CM</span>
-            
-            <span style="color: #a0d2eb;">Equipe:</span>
-            <span style="font-weight: 500;">Turma B - Física 3</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Detalhes da missão
+    st.subheader("📋 Detalhes da Missão")
+    details_container = st.container()
+    with details_container:
+        col1, col2 = st.columns(2)
+        col1.markdown('<div style="color: #a0d2eb;">Nome:</div>', unsafe_allow_html=True)
+        col2.markdown('<div style="font-weight: 500;">PET-01</div>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        col1.markdown('<div style="color: #a0d2eb;">Data:</div>', unsafe_allow_html=True)
+        col2.markdown('<div style="font-weight: 500;">01/07/2025</div>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        col1.markdown('<div style="color: #a0d2eb;">Local:</div>', unsafe_allow_html=True)
+        col2.markdown('<div style="font-weight: 500;">UTFPR - CM</div>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        col1.markdown('<div style="color: #a0d2eb;">Equipe:</div>', unsafe_allow_html=True)
+        col2.markdown('<div style="font-weight: 500;">Turma B - Física 3</div>', unsafe_allow_html=True)
     
     # Controle de atualização
-    st.markdown("""
-    <div class="sidebar-section-title">⚙️ Configurações</div>
-    <div class="sidebar-section">
-        <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <div>Atualização Automática</div>
-                <div style="font-weight: 500; color: #4cc9f0;">ON</div>
-            </div>
-            <div style="text-align: center; font-size: 0.9rem; margin-top: 5px;">Intervalo: 100ms</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.subheader("⚙️ Configurações")
+    config_container = st.container()
+    with config_container:
+        col1, col2 = st.columns([0.7, 0.3])
+        col1.write("Atualização Automática")
+        col2.markdown('<div style="font-weight: 500; color: #4cc9f0;">ON</div>', unsafe_allow_html=True)
+        st.caption("Intervalo: 100ms")
     
     # Botão de abortar
     if st.button("🛑 ABORTAR MISSÃO", key="abort_button", use_container_width=True):
         st.warning("Comando de aborto enviado!")
     
     # Rodapé da sidebar
-    st.markdown("""
-    <div style="text-align: center; color: #5a7a8c; margin-top: 30px; font-size: 0.8rem;">
-        <div style="margin-bottom: 5px;">Sistema de Telemetria v3.0</div>
-        <div>© 2025 Foguete PET - UTFPR</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style="text-align: center; color: #5a7a8c; margin-top: 30px; font-size: 0.8rem;">
+            <div style="margin-bottom: 5px;">Sistema de Telemetria v3.0</div>
+            <div>© 2025 Foguete PET - UTFPR</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 # ======================
 # ATUALIZAÇÃO DE DADOS (1000MS)
 # ======================
@@ -695,11 +721,6 @@ with tab2:
             height=600,
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            title=dict(
-                text='Trajetória 3D do Foguete',
-                x=0.5,
-                font=dict(color='#0f2027', size=20)
-            )
         )
 
         st.plotly_chart(fig_3d, use_container_width=True)
