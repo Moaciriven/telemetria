@@ -2,139 +2,220 @@ import socket
 import time
 import math
 import random
-import numpy as np
 
-class RocketSimulator:
+# =============================================
+# CONSTANTES FÍSICAS (NUNCA MUDAM)
+# =============================================
+class PhysicalConstants:
+    GRAVITY = 9.80665  # m/s²
+    EARTH_RADIUS = 6371000  # metros
+    AIR_DENSITY_SEA = 1.225  # kg/m³
+    DEG_TO_RAD = math.pi / 180.0
+    RAD_TO_DEG = 180.0 / math.pi
+
+
+# =============================================
+# PARÂMETROS DO FOGUETE
+# =============================================
+class RocketParameters:
     def __init__(self):
-        # Configurações de rede
-        self.UDP_IP = "127.0.0.1"
-        self.UDP_PORT = 5555
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        
-        # Parâmetros físicos
-        self.g = 9.80665  # Gravidade padrão (m/s²)
-        self.dt = 0.1     # Passo de simulação (s)
-        self.update_interval = 1.0  # Intervalo de envio (s)
-        
-        # Parâmetros do foguete
-        self.mass = 0.3          # kg
-        self.cross_area = 0.003  # m²
-        self.thrust_force = 200   # N
-        self.burn_time = 0.3      # s
-        
-        # Localização inicial (Paraná - Campo Mourão) Av. Cap. Índio Bandeira, 501 - Vila Carolo, Campo Mourão - PR, 87301-899
-        self.origin = {
+        self.MASS = 0.5             # kg
+        self.CROSS_AREA = 0.005     # m²
+        self.DRAG_COEF = 0.4
+        self.thrust_force = 0       # N (será configurado)
+        self.burn_time = 0          # s (será configurado)
+        self.launch_angle = 0       # graus (será configurado)
+
+    def set_thrust(self, new_thrust):
+        self.thrust_force = new_thrust
+
+    def set_burn_time(self, new_time):
+        self.burn_time = new_time
+
+    def set_launch_angle(self, new_angle):
+        self.launch_angle = new_angle
+
+
+# =============================================
+# PARÂMETROS DA MISSÃO
+# =============================================
+class MissionParameters:
+    def __init__(self):
+        self.launch_site = {
             'lat': -24.046746, 
             'lon': -52.378203,
-            'alt': 0.0  # Altitude pode ser ajustada se necessário
+            'alt': 0.0
         }
+        self.heading = 0
+        self.wind_x = 0.0
+        self.wind_y = 0.0
 
-        
-        # Estado do foguete
+    def set_launch_site(self, lat, lon, alt=0.0):
+        self.launch_site = {'lat': lat, 'lon': lon, 'alt': alt}
+
+    def set_heading(self, new_heading):
+        self.heading = new_heading
+
+    def set_wind(self, wind_x, wind_y):
+        max_wind = 100  # m/s
+        self.wind_x = max(min(wind_x, max_wind), -max_wind)
+        self.wind_y = max(min(wind_y, max_wind), -max_wind)
+
+
+# =============================================
+# MOTOR FÍSICO
+# =============================================
+class PhysicsEngine:
+    def __init__(self, rocket_params, mission_params):
+        self.rocket = rocket_params
+        self.mission = mission_params
+        self.const = PhysicalConstants()
+        self.reset_state()
+
+    def reset_state(self):
         self.state = {
             'time': 0.0,
+            'x': 0.0,
+            'y': 0.0,
             'altitude': 0.0,
-            'velocity': 0.0,
-            'acceleration': 0.0,
-            'position_x': 0.0,
-            'position_y': 0.0,
-            'velocity_x': 0.0,
-            'velocity_y': 0.0
+            'vx': 0.0,
+            'vy': 0.0,
+            'vz': 0.0,
+            'acceleration': 0.0
         }
-        
-        # Fatores ambientais
-        self.wind = {
-            'x': random.uniform(-0.5, 0.5),
-            'y': random.uniform(-0.5, 0.5)
-        }
-        
-        self.last_update = 0.0
 
-    def calculate_drag(self, velocity):
-        """Calcula a força de arrasto aerodinâmico"""
-        air_density = 1.225 * math.exp(-self.state['altitude']/8000)
-        drag_coef = 0.5
-        return 0.5 * air_density * drag_coef * self.cross_area * velocity**2
+    def calculate_drag(self, velocity, altitude):
+        air_density = self.const.AIR_DENSITY_SEA * math.exp(-altitude / 8000)
+        return 0.5 * air_density * self.rocket.DRAG_COEF * self.rocket.CROSS_AREA * velocity**2
 
-    def update_physics(self):
-        """Atualiza o estado físico do foguete"""
-        # Força de propulsão (só durante a queima)
-        thrust = self.thrust_force if self.state['time'] < self.burn_time else 0
-        
-        # Forças atuantes
-        drag = self.calculate_drag(self.state['velocity'])
-        weight = self.mass * self.g
-        
-        # Aceleração vertical (eixo Z)
-        net_force = thrust - weight - drag
-        acceleration_z = net_force / self.mass
-        
-        # Aceleração horizontal (ventos aleatórios - eixos X e Y)
-        accel_x = random.gauss(0, 0.1) + self.wind['x']
-        accel_y = random.gauss(0, 0.1) + self.wind['y']
-        
-        # Atualiza estados
-        self.state['velocity'] += acceleration_z * self.dt
-        self.state['altitude'] += self.state['velocity'] * self.dt
-        
-        self.state['velocity_x'] += accel_x * self.dt
-        self.state['velocity_y'] += accel_y * self.dt
-        
-        self.state['position_x'] += self.state['velocity_x'] * self.dt
-        self.state['position_y'] += self.state['velocity_y'] * self.dt
-        
-        self.state['acceleration'] = math.sqrt(accel_x**2 + accel_y**2 + acceleration_z**2)
-        self.state['time'] += self.dt
+    def update_position(self):
+        angle_rad = self.rocket.launch_angle * self.const.DEG_TO_RAD
+        heading_rad = self.mission.heading * self.const.DEG_TO_RAD
 
-    def get_gps_position(self):
-        """Converte posição local para coordenadas GPS"""
-        earth_radius = 6371000  # Raio da Terra em metros
-        
-        # Conversão para graus decimais
-        dlat = (self.state['position_y'] / earth_radius) * (180 / math.pi)
-        dlon = (self.state['position_x'] / (earth_radius * math.cos(math.radians(self.origin['lat'])))) * (180 / math.pi)
-        
+        thrust = self.rocket.thrust_force if self.state['time'] < self.rocket.burn_time else 0
+        thrust_x = thrust * math.cos(angle_rad) * math.cos(heading_rad)
+        thrust_y = thrust * math.cos(angle_rad) * math.sin(heading_rad)
+        thrust_z = thrust * math.sin(angle_rad)
+
+        velocity_total = math.sqrt(self.state['vx']**2 + self.state['vy']**2 + self.state['vz']**2)
+        drag = self.calculate_drag(velocity_total, self.state['altitude'])
+        weight = self.rocket.MASS * self.const.GRAVITY
+
+        ax = thrust_x / self.rocket.MASS + self.mission.wind_x
+        ay = thrust_y / self.rocket.MASS + self.mission.wind_y
+        az = (thrust_z - weight - drag) / self.rocket.MASS if thrust > 0 else -self.const.GRAVITY
+
+        self.state['vx'] += ax * 0.1
+        self.state['vy'] += ay * 0.1
+        self.state['vz'] += az * 0.1
+
+        self.state['x'] += self.state['vx'] * 0.1
+        self.state['y'] += self.state['vy'] * 0.1
+        self.state['altitude'] += self.state['vz'] * 0.1
+
+        self.state['acceleration'] = math.sqrt(ax**2 + ay**2 + az**2)
+        self.state['time'] += 0.1
+
+        return self.state
+
+
+# =============================================
+# SIMULADOR PRINCIPAL
+# =============================================
+class RocketSimulator:
+    def __init__(
+        self,
+        thrust=40,
+        burn_time=1.5,
+        angle=60,
+        mass=0.5,
+        heading=0,
+        wind_x=0.0,
+        wind_y=0.0,
+        udp_ip="127.0.0.1",
+        udp_port=5555
+    ):
+        self.UDP_IP = udp_ip
+        self.UDP_PORT = udp_port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        self.rocket_params = RocketParameters()
+        self.rocket_params.set_thrust(thrust)
+        self.rocket_params.set_burn_time(burn_time)
+        self.rocket_params.set_launch_angle(angle)
+        self.rocket_params.MASS = mass
+
+        self.mission_params = MissionParameters()
+        self.mission_params.set_heading(heading)
+        self.mission_params.set_wind(wind_x, wind_y)
+
+        self.physics_engine = PhysicsEngine(self.rocket_params, self.mission_params)
+
+    def get_gps_position(self, x, y, alt):
+        dlat = (y / PhysicalConstants.EARTH_RADIUS) * PhysicalConstants.RAD_TO_DEG
+        dlon = (x / (PhysicalConstants.EARTH_RADIUS *
+                     math.cos(self.mission_params.launch_site['lat'] * PhysicalConstants.DEG_TO_RAD))) * PhysicalConstants.RAD_TO_DEG
+
         return {
-            'lat': self.origin['lat'] + dlat,
-            'lon': self.origin['lon'] + dlon,
-            'alt': self.state['altitude']
+            'lat': self.mission_params.launch_site['lat'] + dlat,
+            'lon': self.mission_params.launch_site['lon'] + dlon,
+            'alt': alt
         }
 
-    def send_telemetry(self):
-        """Envia dados via UDP no formato especificado"""
-        gps = self.get_gps_position()
-        data = f"{gps['lat']:.6f},{gps['lon']:.6f},{gps['alt']:.2f},{self.state['acceleration']:.2f}"
+    def get_telemetry_data(self):
+        state = self.physics_engine.state
+        gps = self.get_gps_position(state['x'], state['y'], state['altitude'])
+        return f"{gps['lat']:.6f},{gps['lon']:.6f},{gps['alt']:.2f},{state['acceleration']:.2f}"
+
+    def send_data(self, data):
         self.sock.sendto(data.encode(), (self.UDP_IP, self.UDP_PORT))
-        
-        # Debug (opcional)
-        print(f"[SIM] t={self.state['time']:.1f}s | alt={gps['alt']:.1f}m | accel={self.state['acceleration']:.2f}m/s²")
 
     def run_simulation(self):
-        """Executa o loop principal de simulação"""
         print("[SIM] Iniciando simulação de foguete PET")
-        print(f"[SIM] Destino: {self.UDP_IP}:{self.UDP_PORT}")
-        print(f"[SIM] Propulsão: {self.thrust_force}N por {self.burn_time}s")
-        
+        print(f"[SIM] Local: {self.mission_params.launch_site}")
+        print(f"[SIM] Direção: {self.mission_params.heading}°")
+        print(f"[SIM] Empuxo: {self.rocket_params.thrust_force}N por {self.rocket_params.burn_time}s")
+        print(f"[SIM] Ângulo: {self.rocket_params.launch_angle}°")
+
         try:
-            while self.state['altitude'] >= 0:
-                self.update_physics()
-                
-                # Envia dados no intervalo especificado
-                if self.state['time'] - self.last_update >= self.update_interval:
-                    self.send_telemetry()
-                    self.last_update = self.state['time']
-                
-                time.sleep(self.dt)
-            
-            # Final da simulação
+            last_update = 0
+            self.physics_engine.reset_state()
+
+            while self.physics_engine.state['altitude'] >= 0:
+                self.physics_engine.update_position()
+
+                if self.physics_engine.state['time'] - last_update >= 0.1:
+                    telemetry = self.get_telemetry_data()
+                    self.send_data(telemetry)
+                    last_update = self.physics_engine.state['time']
+
+                    print(f"[SIM] t={self.physics_engine.state['time']:.1f}s | "
+                          f"alt={self.physics_engine.state['altitude']:.1f}m | "
+                          f"dist={math.sqrt(self.physics_engine.state['x']**2 + self.physics_engine.state['y']**2):.1f}m")
+
+                time.sleep(0.1)
+
             print("[SIM] Foguete caiu. Fim da simulação.")
-            self.sock.sendto(b"END", (self.UDP_IP, self.UDP_PORT))
-            
+            self.send_data("END")
+
         except KeyboardInterrupt:
-            print("\n[SIM] Simulação interrompida pelo usuário")
+            print("\n[SIM] Simulação interrompida")
         finally:
             self.sock.close()
 
+
+# =============================================
+# EXECUÇÃO
+# =============================================
 if __name__ == "__main__":
-    rocket = RocketSimulator()
+    rocket = RocketSimulator(
+        thrust=80,        # Empuxo em N
+        burn_time=1.5,    # Tempo de queima
+        angle=45,         # Ângulo de lançamento
+        mass=0.5,         # Massa do foguete
+        heading=90,        # Direção do lançamento
+        wind_x=2.0,       # Vento lateral
+        wind_y=0.0        # Vento frontal
+    )
+
     rocket.run_simulation()

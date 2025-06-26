@@ -1,4 +1,4 @@
-.PHONY: all venv clean clean-data run run--teste run_ht run_st run_sim analyze
+.PHONY: all venv clean clean-data run run--teste analyze
 
 VENV_DIR = venv
 DATA_DIR = data

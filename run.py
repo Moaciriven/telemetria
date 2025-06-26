@@ -59,6 +59,7 @@ def print_status(processes):
 
 def monitor_system():
     """Monitora uso de CPU e memória"""
+    global monitoring_active
     while monitoring_active:
         try:
             cpu = psutil.cpu_percent()
@@ -101,7 +102,7 @@ def main():
     ###############################################
     #  SISTEMA DE TELEMETRIA PARA FOGUETE PET     #
     #  Iniciando todos os componentes...          #
-    #  Modo: {'TESTE' if MODO_TESTE else 'DEFINITIVO'}                  #
+    #  Modo: {'TESTE                              #' if MODO_TESTE else 'DEFINITIVO                         #'} 
     ###############################################
     """)
 
@@ -109,26 +110,30 @@ def main():
         clean_data_directory()
 
     # Inicia thread de monitoramento
-    threading.Thread(target=monitor_system, daemon=True).start()
+    monitor_thread = threading.Thread(target=monitor_system, daemon=True)
+    monitor_thread.start()
 
-    # Comandos dos componentes
+    # Comandos dos componentes (atualizados para nova estrutura)
     commands = {
         "UDP_GETTER": f"{sys.executable} src/udp_getter.py {'--teste' if MODO_TESTE else ''}",
-        "VISUALIZADOR": f"QT_QPA_PLATFORM=xcb {sys.executable} src/visualizador.py",
+        # Visualizador temporariamente desativado
+        # "VISUALIZADOR": f"QT_QPA_PLATFORM=xcb {sys.executable} src/visualizador.py",
         "DASHBOARD": (
-            f"{sys.executable} -m streamlit run src/dashboard.py "
+            f"{sys.executable} -m streamlit run src/app.py "
+            f"--server.port {DASHBOARD_PORT} "
             "--server.headless true "
             "--global.showWarningOnDirectExecution false"
         ),
-        "SIMULADOR": f"{sys.executable} src/simulador.py"
+        "SIMULADOR": f"{sys.executable} src/simulador.py",
+        "VISUALIZADOR": f"{sys.executable} src/visualizador.py"
     }
 
     # Ordem de inicialização e dependências
     startup_order = [
         ("UDP_GETTER", []),
-        #S("VISUALIZADOR", ["UDP_GETTER"]),
         ("DASHBOARD", ["UDP_GETTER"]),
-        ("SIMULADOR", ["UDP_GETTER"])
+        ("SIMULADOR", ["UDP_GETTER"]),
+        ("VISUALIZADOR", [])
     ]
 
     # Verifica se portas estão livres
@@ -148,6 +153,9 @@ def main():
             if name == "UDP_GETTER":
                 print(f"[{timestamp()}] [SISTEMA] Aguardando inicialização do UDP_GETTER...")
                 time.sleep(2)
+            elif name == "DASHBOARD":
+                print(f"[{timestamp()}] [SISTEMA] Aguardando inicialização do Dashboard...")
+                time.sleep(5)  # Mais tempo para o Streamlit iniciar
             else:
                 time.sleep(1)
 
@@ -169,13 +177,21 @@ def main():
                     continue
 
                 if p.poll() is None:
+                    # Processo ainda está rodando
                     active_processes.append((p, name))
                 else:
-                    if MODO_TESTE and name == "SIMULADOR":
-                        print(f"[{timestamp()}] [SISTEMA] SIMULADOR finalizado (modo teste)")
-
+                    # Processo terminou
+                    if name == "SIMULADOR":
+                        # Simulador finalizado - não reiniciamos
+                        print(f"[{timestamp()}] [SISTEMA] SIMULADOR finalizado. Não será reiniciado.")
+                        continue
                     else:
-                        print(f"[{timestamp()}] [SISTEMA] {name} finalizado (modo teste)")
+                        # Outros processos são reiniciados
+                        print(f"[{timestamp()}] [SISTEMA] {name} finalizado, reiniciando...")
+                        status_changed = True
+                        new_p, _ = start_process(commands[name], name)
+                        if new_p:
+                            active_processes.append((new_p, name))
 
             processes = active_processes
 
